@@ -53,16 +53,22 @@ public class DatabaseHandler extends SQLiteOpenHelper {
 
     public Car getCar(int id) {
         SQLiteDatabase db = this.getReadableDatabase();
+        Car car = new Car();
 
         Cursor cursor = db.query(Util.TABLE_NAME, new String[]{Util.KEY_ID, Util.KEY_NAME, Util.KEY_PRICE},
                 Util.KEY_ID + "=?", new String[]{String.valueOf(id)},
                 null, null, null, null);
 
         if (cursor != null) {
-            cursor.moveToFirst();
-        }
 
-        Car car = new Car(Objects.requireNonNull(cursor).getInt(0), cursor.getString(1), cursor.getString(2));
+            try {
+                cursor.moveToFirst();
+                car = new Car(Objects.requireNonNull(cursor).getInt(0), cursor.getString(1), cursor.getString(2));
+            } finally {
+                cursor.close();
+            }
+
+        }
         return car;
     }
 
@@ -87,4 +93,31 @@ public class DatabaseHandler extends SQLiteOpenHelper {
         }
         return carsList;
     }
+
+    public int updateCar(Car car) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(Util.KEY_NAME, car.getName());
+        contentValues.put(Util.KEY_PRICE, car.getPrice());
+
+        return db.update(Util.TABLE_NAME, contentValues, Util.KEY_ID + "=?", new String[]{String.valueOf(car.getId())});
+    }
+
+    public void deleteCar(Car car) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        db.delete(Util.TABLE_NAME, Util.KEY_ID + "=?", new String[]{String.valueOf(car.getId())});
+        db.close();
+    }
+
+    public int getCarsCount() {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String countQuery = "SELECT * FROM " + Util.TABLE_NAME;
+        Cursor cursor = db.rawQuery(countQuery, null);
+
+        return cursor.getCount();
+    }
+
 }
